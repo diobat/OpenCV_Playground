@@ -15,6 +15,7 @@
 #include <Windows.h>    // Keypress detection
 #include <time.h>       // Generate timestamp for file names
 #include <iostream>
+#include <filesystem>
 
 
 ///// CUSTOM LIBS
@@ -33,6 +34,9 @@ cv::Mat dst(webcam_width, webcam_height, CV_8UC4);
 cv::Mat catFrame(webcam_width, webcam_height, CV_8UC4);
 */
 
+
+cv::Mat src, dst, catFrame;
+
 int morph_elem = 0;
 int morph_size = 0;
 int morph_operator = 0;
@@ -40,11 +44,11 @@ int const max_operator = 4;
 int const max_elem = 2;
 int const max_kernel_size = 21;
 
-bool isWebcam = false, isRecording = false, isReadingFile = false;
+bool continueLoop = true,  isWebcam = false, isRecording = false, isReadingFile = false;
 
 const char* window_name = "Morphology Transformations";
 
-void Morphology_Operations(int, void*);
+void Morphology_Operations();
 
 int main(int argc, char* argv[])
 {
@@ -54,7 +58,7 @@ int main(int argc, char* argv[])
 
 
     // Add some arg logging into console for debug feedback purposes
-    std::cout << argc << std::endl;
+    //std::cout << argc << std::endl;
     //std::cout << strlen(argv[1]) << std::endl;
 
     if (argc > 3)
@@ -73,12 +77,24 @@ int main(int argc, char* argv[])
 
     for (int i = 1; i < argc; i++)
     {
-        std::wcout << argv[i] << std::endl;
+        //std::wcout << argv[i] << std::endl;
 
 
         if (strlen(argv[i]) > 2)
         {
+            
             isReadingFile = true;
+
+            if (!std::filesystem::exists((std::string)argv[i]))
+            {
+                std::cout << "No file with that name was found" << std::endl;
+                return -1;
+            }
+            else
+            {
+                fileMode fileHandler((std::string)argv[i]);
+            }
+
         }
 
 
@@ -93,6 +109,15 @@ int main(int argc, char* argv[])
             isRecording = true;
 
         }
+        else if (strcmp(argv[i], "h") == 0)
+        {
+            std::cout << "w             | Read from Webcam mode" << std::endl;
+            std::cout << "r             | Recording mode, file will be named output.avi" << std::endl;
+            std::cout << "filename      | Read from file mode" << std::endl;
+
+
+            return 0;
+        }
         else
         {
             if (!isReadingFile)
@@ -103,25 +128,23 @@ int main(int argc, char* argv[])
         }
     }
 
+    // Start the custom classes
+    webcamMode webcamHandler(0, cv::CAP_ANY, isRecording);
+    recordingMode recordingHandler("output.avi");
+    fileMode fileHandler((std::string)argv[1]);
 
 
-
-    webcamMode webcamHandler(0, cv::CAP_ANY);
-    recordingMode recordingHandler("testMovie.avi");
-    fileMode fileHandler("./testMovie2.avi");
-
-
-    /*
+    
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE); // Create window
 
     cv::createTrackbar("Operator:\n 0: Opening - 1: Closing  \n 2: Gradient - 3: Top Hat \n 4: Black Hat", window_name, &morph_operator, max_operator);
     cv::createTrackbar("Element:\n 0: Rect - 1: Cross - 2: Ellipse", window_name, &morph_elem, max_elem);
     cv::createTrackbar("Kernel size:\n 2n +1", window_name, &morph_size, max_kernel_size);
-    */
+    
 
 
 
-    cv::Mat src, dst, catFrame;
+
 
     do
     {
@@ -137,12 +160,28 @@ int main(int argc, char* argv[])
             src = fileHandler.getFrame();
         }
 
+        if (src.empty())
+        {
+            break;
+        }
+
         //////////////////////////////
         // DO STUFF WITH THE FRAME HERE
+         
+        
 
-
+        //dst.release();
+        //std::cout << "KICKFLIP" << std::endl;
+        cv::flip(src, src, 1);
+        dst = src.clone();
+        
         // Intensity normalization
-        cv::normalize(src, dst, 255.0, 0.0, cv::NORM_INF);
+        cv::normalize(dst, dst, 255.0, 0.0, cv::NORM_INF);
+
+
+
+        Morphology_Operations();
+
 
 
 
@@ -150,8 +189,11 @@ int main(int argc, char* argv[])
         //////////////////////////////
 
         // Add a watermark to the edited frame
-        watermark(dst, dst);
-
+        watermark(dst);
+        if (isRecording)
+        {
+            watermarkREC(dst);
+        }
 
 
         if (isRecording)
@@ -159,8 +201,12 @@ int main(int argc, char* argv[])
             recordingHandler.callback(dst);
         }
 
+
+
         // Horizontally concatenate the frames
         cv::hconcat(src, dst, catFrame);
+
+       
 
         // Display the frame
         cv::imshow("Live!", catFrame);
@@ -182,14 +228,13 @@ int main(int argc, char* argv[])
 }
 
 
-/*
-void Morphology_Operations(int, void*)
+
+void Morphology_Operations()
 {
     // Since MORPH_X : 2,3,4,5 and 6
     int operation = morph_operator + 2;
     cv::Mat element = cv::getStructuringElement(morph_elem, cv::Size(2 * morph_size + 1, 2 * morph_size + 1), cv::Point(morph_size, morph_size));
-    morphologyEx(src, dst, operation, element);
+    morphologyEx(dst, dst, operation, element);
     //imshow(window_name, dst);
 }
 
-*/

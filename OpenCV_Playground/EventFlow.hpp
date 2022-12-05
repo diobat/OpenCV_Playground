@@ -3,15 +3,11 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
+// std
+#include <filesystem>
+
+// own libs
 #include "Interfaces.hpp"
-
-
-
-class eventManager : public I_Callback
-{
-
-
-};
 
 
 
@@ -22,15 +18,13 @@ private:
 	
 
 	cv::Size frameSize;					// Framesizes
-
 	cv::Mat src;						// Material class for the frames
-
 	cv::VideoCapture capture;			// Capture class	
-
+	bool recordingMode;
 
 public:
 
-	webcamMode(int deviceID, int apiID, cv::Size inputFrameSize = cv::Size(640, 480), bool isRecording = false);
+	webcamMode(int deviceID, int apiID, bool isRecording = false, cv::Size inputFrameSize = cv::Size(640, 480));
 	void callback(void);
 	cv::Mat getFrame(void);
 	~webcamMode();
@@ -44,7 +38,8 @@ private:
 	cv::Size frameSize;
 	cv::Mat src;
 	cv::VideoCapture capture;
-	bool isVideoOver;
+
+	bool wasInitialized;
 
 public:
 

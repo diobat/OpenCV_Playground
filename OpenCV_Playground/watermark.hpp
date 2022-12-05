@@ -7,6 +7,8 @@
 #include <opencv2/highgui.hpp> // for debugging
 #include <iostream> // for debugging
 
-void watermark(cv::Mat src, cv::Mat dst);
+#include <time.h> // REC red light blink
 
+void watermark(cv::Mat dst);
 
+void watermarkREC(cv::Mat dst);

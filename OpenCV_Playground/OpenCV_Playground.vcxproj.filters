@@ -40,5 +40,11 @@
     <Image Include="images\d20.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="images\rec1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="images\rec2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@
 ///////////////
 
 
-webcamMode::webcamMode(int deviceID, int apiID, cv::Size inputFrameSize, bool isRecording)
+webcamMode::webcamMode(int deviceID, int apiID, bool isRecording, cv::Size inputFrameSize)
 {
 
 
@@ -28,7 +28,8 @@ webcamMode::webcamMode(int deviceID, int apiID, cv::Size inputFrameSize, bool is
 	// Intialize the capture of webcam frames
 	capture.open(deviceID, apiID);
 
-
+	// Set the internal recording variable
+	recordingMode = isRecording;
 
 
 	if (!capture.isOpened())
@@ -46,6 +47,7 @@ void webcamMode::callback()
 	capture.read(src);
 	// Convert the captured frame into a 4 channel, by adding alpha channel
 	cv::cvtColor(src, src, cv::COLOR_BGR2BGRA);
+
 
 }
 
@@ -71,14 +73,24 @@ webcamMode::~webcamMode()
 
 fileMode::fileMode(std::string inputFileLocation)
 {
+
+	wasInitialized = false;
+
+	if (std::filesystem::exists((std::string)inputFileLocation))
+	{
+
+		std::cout << "Input file located" << std::endl;
+		capture = cv::VideoCapture(inputFileLocation);
+		wasInitialized = true;
+	}
 	// Iniitate the capture class
-	capture = cv::VideoCapture(inputFileLocation);
-	isVideoOver = false;
+
+
 
 	// Check if camera opened successfully
-	if (!capture.isOpened()) {
-		std::cout << "Error opening video stream or file" << std::endl;
-	}
+	//if (!capture.isOpened()) {
+	//	std::cout << "Error opening video stream or file" << std::endl;
+	//}
 
 
 	// Save the frame size in an easier to acess location
@@ -88,10 +100,22 @@ fileMode::fileMode(std::string inputFileLocation)
 
 void fileMode::callback()
 {
+	if(wasInitialized)
+	{
+		capture.read(src);
+	}
+
 	// Capture the frame
-	capture.read(src);
-	// Convert the captured frame into a 4 channel, by adding alpha channel
-	cv::cvtColor(src, src, cv::COLOR_BGR2BGRA);
+
+	//if (src.empty())
+	//{
+	//	isVideoOver = true;
+	//}
+	//else
+	//{
+		// Convert the captured frame into a 4 channel, by adding alpha channel
+		cv::cvtColor(src, src, cv::COLOR_BGR2BGRA);
+	//}
 }
 
 cv::Mat fileMode::getFrame()
@@ -134,7 +158,7 @@ void recordingMode::callback(cv::Mat nextFrame)
 	if ((nextFrame.rows == frameSize.height) && (nextFrame.cols == frameSize.width))
 	{
 		// Remove the alpha channel otherwise the recorder wont work
-		cv::cvtColor(nextFrame, frameToRecord, cv::COLOR_BGRA2BGR); 
+		//cv::cvtColor(nextFrame, frameToRecord, cv::COLOR_BGRA2BGR); 
 		// Save the frame
 		recorder.write(frameToRecord);
 	}
